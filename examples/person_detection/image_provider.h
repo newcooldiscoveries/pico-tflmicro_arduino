@@ -18,7 +18,6 @@ limitations under the License.
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
-#define SCREEN 0
 
 // This is an abstraction around an image source like a camera, and is
 // expected to return 8-bit sample data.  The assumption is that this will be

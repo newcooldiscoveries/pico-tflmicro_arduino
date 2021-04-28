@@ -18,7 +18,6 @@ limitations under the License.
 #include "main_functions.h"
 #include "st7735.h"
 
-
 #include "detection_responder.h"
 #include "image_provider.h"
 #include "model_settings.h"
@@ -52,6 +51,10 @@ void setup() {
   Serial.begin(115200);
   Serial1.begin(921600);
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); 
+
+  ST7735_Init();
+  ST7735_DrawImage(0, 0, 80, 160, arducam_logo);
 
   // Set up logging. Google style is to avoid globals or statics because of
   // lifetime uncertainty, but since this has a trivial destructor it's okay.
@@ -105,11 +108,15 @@ void setup() {
   if (setup_status != kTfLiteOk) {
     TF_LITE_REPORT_ERROR(error_reporter, "Set up failed\n");
   }
+
+  ST7735_FillScreen(ST7735_BLACK);
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); 
+
 }
 
 // The name of this function is important for Arduino compatibility.
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); 
   // Get image from provider.
   if (kTfLiteOk != GetImage(error_reporter, kNumCols, kNumRows, kNumChannels,
                             input->data.int8)) {
@@ -122,17 +129,14 @@ void loop() {
   }
 
   TfLiteTensor* output = interpreter->output(0);
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
 
   // Process the inference results.
   int8_t person_score = output->data.uint8[kPersonIndex];
   int8_t no_person_score = output->data.uint8[kNotAPersonIndex];
   RespondToDetection(error_reporter, person_score, no_person_score);
   
-#if SCREEN
   char array[10];
   sprintf(array, "%d%%", ((person_score + 128) * 100) >> 8);
   ST7735_FillRectangle(10, 120, ST7735_WIDTH, 40, ST7735_BLACK);
   ST7735_WriteString(13, 120, array, Font_16x26, ST7735_GREEN, ST7735_BLACK);
-#endif
 }
